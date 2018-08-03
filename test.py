@@ -19,7 +19,10 @@ def forward_test_multiscale(nets, img, args):
     (net_encoder, net_decoder) = nets
 
     pred = torch.zeros(1, args.num_class, img.size(2), img.size(3))
-    pred = Variable(pred, volatile=True).cuda()
+    if torch.cuda.is_available():
+        pred = Variable(pred, volatile=True).cuda()
+    else:
+        pred = Variable(pred, volatile=True)
 
     for scale in args.scales:
         img_scale = zoom(img.numpy(),
@@ -29,8 +32,12 @@ def forward_test_multiscale(nets, img, args):
                          mode='nearest')
 
         # feed input data
-        input_img = Variable(torch.from_numpy(img_scale),
+        if torch.cuda.is_available():
+            input_img = Variable(torch.from_numpy(img_scale),
                              volatile=True).cuda()
+        else:
+            input_img = Variable(torch.from_numpy(img_scale),
+                             volatile=True)
 
         # forward
         pred_scale = net_decoder(net_encoder(input_img),
@@ -55,6 +62,10 @@ def visualize_test_result(img, pred, args):
 
     # prediction
     pred_ = np.argmax(pred.numpy(), axis=0)
+    #---------added----------
+    pplornot = np.where(pred_==12,1,0)
+    np.savetxt(args.test_img + '.txt', pplornot, delimiter=',', fmt='%u')
+    #-----------------
     pred_color = colorEncode(pred_, colors)
 
     # aggregate images and save
@@ -101,8 +112,9 @@ def main(args):
                                         use_softmax=True)
 
     nets = (net_encoder, net_decoder)
-    for net in nets:
-        net.cuda()
+    if torch.cuda.is_available():
+        for net in nets:
+            net.cuda()
 
     # single pass
     test(nets, args)
