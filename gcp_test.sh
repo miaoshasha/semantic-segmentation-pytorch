@@ -66,7 +66,6 @@ MODEL_PATH="./baseline-resnet34_dilated8-psp_bilinear"
 gcloud ml-engine jobs submit training $JOB_NAME \
     --stream-logs \
     --staging-bucket $PACKAGE_STAGING_BUCKET \
-    --job-dir "${OUTPUT_DIR}"  \
     --scale-tier "${TIER}"  \
     --module-name trainer.test \
     --region "${REGION}" \
