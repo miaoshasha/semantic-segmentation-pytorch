@@ -5,3 +5,7 @@ ckpt/
 vis/
 log/
 pretrained/
+baseline-resnet34_dilated8-psp_bilinear/
+data/
+*jpg
+*png
