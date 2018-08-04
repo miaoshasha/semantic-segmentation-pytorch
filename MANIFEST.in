@@ -1,0 +1,12 @@
+include baseline-resnet34_dilated8-psp_bilinear/decoder_best.pth
+include baseline-resnet34_dilated8-psp_bilinear/encoder_best.pth
+include data/color150.mat
+include dataset.py
+include eval.py
+include models.py
+include resnet.py
+include test.py
+include train.py
+include utils.py
+include setup.py
+include demo_test.sh
