@@ -5,7 +5,7 @@ REGION=us-central1
 # set up cloud bucket for source code
 PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 SOURCE_BUCKET_NAME=${PROJECT_ID}-mlengine-pytorch_trial
-gsutil mb -l $REGION gs://$SOURCE_BUCKET_NAME
+#gsutil mb -l $REGION gs://$SOURCE_BUCKET_NAME
 
 # package code
 python setup.py sdist
@@ -29,7 +29,7 @@ JOB_NAME="scenenet_$now"
 
 # create the new bucket
 out_dir="$BUCKET_NAME_SUR-log"
-gsutil mb -l $REGION gs://$out_dir # comment out after first run
+#gsutil mb -l $REGION gs://$out_dir # comment out after first run
 
 # folder for each training
 OUTPUT_DIR="gs://$out_dir/$JOB_NAME/logdir"
@@ -43,7 +43,10 @@ gsutil mb -l $REGION $PACKAGE_STAGING_BUCKET
 TRAINER_PACKAGE_PATH="trainer"  # ><<<<<<<<-=========problem here!!!!
 
 # data dir
-ADE20K="ade20k"     # <<<<<<<<<<<=========change here!!!
+ADE20K="gs://ade20k"     # <<<<<<<<<<<=========change here!!!
+local_data_path="/Users/yishasun/Documents/dl_models/sem_seg/semantic-segmentation-pytorch/davidgarrett.jpg"
+gsutil mb -l $REGION $ADE20K
+gsutil cp $local_data_path $ADE20K
 
 # ckpt
 CKPT="ckpt_ade20k"     #<<<<<<<<<<<<<<==========
@@ -70,7 +73,7 @@ gcloud ml-engine jobs submit training $JOB_NAME \
     --packages "${SOURCE_CODE}" \
     -- \
     --model_path="${MODEL_PATH}" \
-    --test_img="./davidgarrett.jpg" \
+    --test_img="{$ADE20K}" \
     --arch_encoder="resnet34_dilated8" \
     --arch_decoder="psp_bilinear" \
     --fc_dim=2048 \
