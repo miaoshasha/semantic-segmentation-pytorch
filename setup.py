@@ -7,7 +7,7 @@ except ImportError: # for pip <= 9.0.3
 
 #import uuid
 
-REQUIRED_PACKAGES = ['torchvision']
+REQUIRED_PACKAGES = ['torchvision', 'google-cloud-storage', 'tensorboardX']
 DEPENDENCY_LINKS = ['http://download.pytorch.org/whl/cpu/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl']
 
 setup(

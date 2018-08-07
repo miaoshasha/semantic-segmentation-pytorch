@@ -12,7 +12,8 @@ from scipy.ndimage import zoom
 # Our libs
 from models import ModelBuilder
 from utils import colorEncode
-
+# vis
+from tensorboardX import SummaryWriter
 
 # forward func for testing
 def forward_test_multiscale(nets, img, args):
@@ -70,9 +71,11 @@ def visualize_test_result(img, pred, args):
 
     # aggregate images and save
     im_vis = np.concatenate((img, pred_color), axis=1).astype(np.uint8)
-    imsave(os.path.join(args.result,
-                        os.path.basename(args.test_img) + '.png'),
-           im_vis)
+    paths = os.path.join('/tmp/result', os.path.basename(args.test_img) + '.png')
+    imsave(paths, im_vis)
+    print(paths)
+    bucket_name = "ubiquity-kube-mlengine-pytorch_trial/ade20k"
+    upload_to_buckets('result/'+os.path.basename(args.test_img) + '.png', bucket_name)
 
 
 def test(nets, args):
@@ -82,6 +85,7 @@ def test(nets, args):
 
     # loading image, resize, convert to tensor
     img = imread(args.test_img, mode='RGB')
+
     h, w = img.shape[0], img.shape[1]
     s = 1. * args.imgSize / min(h, w)
     img = imresize(img, s)
@@ -98,9 +102,66 @@ def test(nets, args):
     # visualization
     visualize_test_result(img, pred, args)
 
+def download_blob(bucket_name, source_blob_name, destination_file_name):
+    """Downloads a blob from the bucket."""
+    from google.cloud import storage
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+
+    blob.download_to_filename(destination_file_name)
+
+    print('Blob {} downloaded to {}.'.format(
+        source_blob_name,
+        destination_file_name))
+
+def download_from_buckets(bucket_url, destination_folder):
+    # pull data from buckets and return the path on local machine/instance
+    # create local folder to save the objects
+    from subprocess import call
+    full_destination_folder = '/tmp/' + destination_folder
+    call(['mkdir', full_destination_folder])
+
+    file_name = 'a.pth' #bucket_url.split[-1]
+    destination_file_name = full_destination_folder + '/' + file_name
+    call(['gsutil','cp',bucket_url, destination_file_name])
+
+    call(['ls', '-l', '/tmp/'])
+    call(['ls', '-l', '/'])
+    return destination_file_name
+
+def upload_to_buckets(local_folder, destination_bucket_name):
+    # push data to buckets
+    # local_folder is presumed to be under /tmp/
+    # all files under local_folder will be copied to the bucket, path preserved
+    from subprocess import call
+
+    destination_bucket_url = 'gs://' + destination_bucket_name + local_folder
+    call(['gsutil','cp', '-r', '/tmp/'+local_folder, destination_bucket_url])
+
 
 def main(args):
+    # download data from buckets
+    #download_from_buckets(args.test_img)
+    bucket_name = "ubiquity-kube-mlengine-pytorch_trial"
+    source_blob_name = "ade20k/davidgarrett.jpg"
+    destination_file_name = "/davidgarrett.jpg"
+    download_blob(bucket_name, source_blob_name, destination_file_name)
+
+
+    bucket_url = args.weights_encoder
+    print(bucket_url, type(bucket_url))
+    destination_folder = 'model_path_en'
+    args.weights_encoder = download_from_buckets(bucket_url, destination_folder)
+    bucket_url = args.weights_decoder
+    print(bucket_url, type(bucket_url))
+    destination_folder = 'model_path_de'
+    args.weights_decoder = download_from_buckets(bucket_url, destination_folder)
+    print('gsutil works')
+
     # Network Builders
+    writer = SummaryWriter()
+
     builder = ModelBuilder()
     net_encoder = builder.build_encoder(arch=args.arch_encoder,
                                         fc_dim=args.fc_dim,

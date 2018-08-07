@@ -43,13 +43,14 @@ gsutil mb -l $REGION $PACKAGE_STAGING_BUCKET
 TRAINER_PACKAGE_PATH="trainer"  # ><<<<<<<<-=========problem here!!!!
 
 # data dir
-ADE20K="gs://ade20k"     # <<<<<<<<<<<=========change here!!!
+ADE20K="gs://$SOURCE_BUCKET_NAME/ade20k"
 local_data_path="/Users/yishasun/Documents/dl_models/sem_seg/semantic-segmentation-pytorch/davidgarrett.jpg"
-gsutil mb -l $REGION $ADE20K
-gsutil cp $local_data_path $ADE20K
-
+gsutil cp $local_data_path "$ADE20K/davidgarrett.jpg"
 # ckpt
-CKPT="ckpt_ade20k"     #<<<<<<<<<<<<<<==========
+CKPT="gs://$SOURCE_BUCKET_NAME/ckpt"
+local_ckpt_path="/Users/yishasun/Documents/dl_models/sem_seg/semantic-segmentation-pytorch/baseline-resnet34_dilated8-psp_bilinear"
+#gsutil cp -r $local_ckpt_path $CKPT
+
 
 # custom dependency bucket
 #DEPENDENCY_SLIM="/Users/yishasun/Documents/dl_models/models/research/slim/dist/slim-0.1.tar.gz"
@@ -71,8 +72,8 @@ gcloud ml-engine jobs submit training $JOB_NAME \
     --region "${REGION}" \
     --packages "${SOURCE_CODE}" \
     -- \
-    --model_path="${MODEL_PATH}" \
-    --test_img="{$ADE20K}" \
+    --model_path="${CKPT}" \
+    --test_img="${ADE20K}" \
     --arch_encoder="resnet34_dilated8" \
     --arch_decoder="psp_bilinear" \
     --fc_dim=2048 \
