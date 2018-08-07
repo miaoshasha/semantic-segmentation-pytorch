@@ -76,7 +76,7 @@ gcloud ml-engine jobs submit training $JOB_NAME \
     --test_img="${ADE20K}" \
     --arch_encoder="resnet34_dilated8" \
     --arch_decoder="psp_bilinear" \
-    --fc_dim=2048 \
+    --fc_dim=512 \
     --result="${OUTPUT_DIR}"
 
 

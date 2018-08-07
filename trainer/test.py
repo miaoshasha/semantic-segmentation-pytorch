@@ -71,7 +71,7 @@ def visualize_test_result(img, pred, args):
 
     # aggregate images and save
     im_vis = np.concatenate((img, pred_color), axis=1).astype(np.uint8)
-    paths = os.path.join('/tmp/result', os.path.basename(args.test_img) + '.png')
+    paths = os.path.join('/tmpdata/result', os.path.basename(args.test_img) + '.png')
     imsave(paths, im_vis)
     print(paths)
     bucket_name = "ubiquity-kube-mlengine-pytorch_trial/ade20k"
@@ -115,29 +115,39 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         source_blob_name,
         destination_file_name))
 
-def download_from_buckets(bucket_url, destination_folder):
-    # pull data from buckets and return the path on local machine/instance
-    # create local folder to save the objects
+def cloud_local_file_exchagne(start_location, destination_folder, file_name):
+    # pull or push data between buckets and local directory
+    # return the path of destination
+    # will create local folder to save stuff
+    # bucket has to exist for pushing stuff
+
+    # start_location: string, e.g. gs://bucket_name/sub_folder, without file names
+    # destination folder: string, e.g. /full/path/on/local/machine, without file names
     from subprocess import call
-    full_destination_folder = '/tmp/' + destination_folder
-    call(['mkdir', full_destination_folder])
+    if start_location[:5] == "gs://":
+        # downloading data, make sure destination folder exists
+        call(['mkdir', '-p', destination_folder])
 
-    file_name = 'a.pth' #bucket_url.split[-1]
-    destination_file_name = full_destination_folder + '/' + file_name
-    call(['gsutil','cp',bucket_url, destination_file_name])
+    if file_name == "":
+        # copying full folder
+        start_location = start_location+'/*'
+        call(['gsutil','-m','cp','-r', start_location, destination_folder])
+        return destination_folder
 
-    call(['ls', '-l', '/tmp/'])
-    call(['ls', '-l', '/'])
-    return destination_file_name
+    full_start_path = start_location + '/' + file_name
+    full_des_path = destination_folder + '/' + file_name
+
+    call(['gsutil', 'cp', full_start_path, full_des_path])
+    return full_des_path
 
 def upload_to_buckets(local_folder, destination_bucket_name):
     # push data to buckets
-    # local_folder is presumed to be under /tmp/
+    # local_folder is presumed to be under /tmpdata/
     # all files under local_folder will be copied to the bucket, path preserved
     from subprocess import call
 
     destination_bucket_url = 'gs://' + destination_bucket_name + local_folder
-    call(['gsutil','cp', '-r', '/tmp/'+local_folder, destination_bucket_url])
+    call(['gsutil','cp', '-r', '/tmpdata/'+local_folder, destination_bucket_url])
 
 
 def main(args):
@@ -147,6 +157,7 @@ def main(args):
     source_blob_name = "ade20k/davidgarrett.jpg"
     destination_file_name = "/davidgarrett.jpg"
     download_blob(bucket_name, source_blob_name, destination_file_name)
+    args.test_img = destination_file_name
 
 
     bucket_url = args.weights_encoder
